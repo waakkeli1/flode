@@ -32,7 +32,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 /* ---------- feed ---------- */
 .feed { position: fixed; inset: 0; z-index: 2; overflow-y: scroll; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .feed::-webkit-scrollbar { display: none; }
-.card { position: relative; height: 100vh; height: 100dvh; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; }
+.card { position: relative; height: 100vh; height: 100dvh; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; -webkit-touch-callout: none; }
 .poster-bg, .poster { position: absolute; inset: 0; background-position: center; background-repeat: no-repeat; transition: opacity .35s ease; }
 .poster-bg { background-size: cover; filter: blur(28px) brightness(.55); transform: scale(1.2); }
 .poster { background-size: contain; }
@@ -45,7 +45,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
           border: 3px solid rgba(255,255,255,.25); border-top-color: #fff; animation: spin .8s linear infinite; opacity: 0; transition: opacity .2s; }
 .card.loading .loader { opacity: 1; }
 
-.meta { position: absolute; left: 14px; right: 86px; bottom: calc(22px + var(--sab)); text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+.meta { position: absolute; left: 14px; right: 86px; bottom: calc(36px + var(--sab)); text-shadow: 0 1px 3px rgba(0,0,0,.6); }
 .ch { font-weight: 700; font-size: 16px; }
 .ti { margin-top: 4px; font-size: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .tifi { margin-top: 3px; font-size: 14px; color: var(--sun); font-style: italic; }
@@ -67,8 +67,24 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .subs .w.tap { background: var(--sun); color: #1a1400; }
 .subs .w.saved { color: var(--sun); }
 .subs .fi { margin-top: 8px; font-size: 16px; font-style: italic; color: var(--muted); text-shadow: 0 1px 3px #000; }
-.prog { position: absolute; left: 0; right: 0; bottom: var(--sab); height: 3px; background: rgba(255,255,255,.15); }
-.prog i { display: block; height: 100%; width: 0; background: #fff; }
+.chip.yt { background: rgba(255,255,255,.1); color: var(--muted); }
+/* kelauspalkki: iso kosketusalue, ohut palkki */
+.scrub { position: absolute; left: 0; right: 0; bottom: var(--sab); height: 34px; touch-action: none; z-index: 2; }
+.prog { --p: 0; position: absolute; left: 0; right: 0; bottom: 6px; height: 3px; background: rgba(255,255,255,.18); transition: height .15s; }
+.prog i { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--p) * 100%); background: #fff; }
+.prog b { position: absolute; top: 50%; left: calc(var(--p) * 100%); width: 16px; height: 16px; border-radius: 50%; background: #fff;
+          transform: translate(-50%, -50%) scale(0); transition: transform .15s; box-shadow: 0 1px 6px rgba(0,0,0,.5); }
+.scrub.drag .prog { height: 8px; }
+.scrub.drag .prog b { transform: translate(-50%, -50%) scale(1); }
+.bubble { position: fixed; z-index: 6; left: 50%; bottom: calc(110px + var(--sab)); transform: translateX(-50%); font-weight: 900; font-size: 30px;
+          text-shadow: 0 2px 8px rgba(0,0,0,.8); opacity: 0; transition: opacity .15s; pointer-events: none; font-variant-numeric: tabular-nums; }
+.bubble.show { opacity: 1; }
+.bubble small { font-size: 18px; color: var(--muted); }
+.slowtag { position: fixed; z-index: 6; left: 50%; top: calc(64px + var(--sat)); transform: translateX(-50%) scale(.9); opacity: 0; transition: .18s;
+           background: rgba(0,0,0,.65); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); padding: 8px 15px; border-radius: 999px; font-weight: 800; pointer-events: none; }
+.slowtag.show { opacity: 1; transform: translateX(-50%) scale(1); }
+.top { transition: opacity .35s; }
+.top.dim { opacity: 0; }
 
 /* ---------- yläpalkki ---------- */
 .top { position: fixed; z-index: 3; left: 0; right: 0; top: 0; padding: calc(8px + var(--sat)) 12px 8px; display: flex; align-items: center; gap: 8px; pointer-events: none; }
@@ -147,16 +163,11 @@ h2.sh { font-size: 22px; margin: 4px 0 12px; }
 .word .x { color: var(--muted); padding: 0 6px; font-size: 16px; }
 .fine { color: var(--muted); font-size: 12.5px; margin-top: 14px; line-height: 1.5; }
 
-/* ---------- aloitus ---------- */
-.splash { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px;
-          background: radial-gradient(90% 60% at 50% 30%, #2A2470 0%, transparent 70%), linear-gradient(180deg, #0D0B24, #000); transition: opacity .4s; }
-.splash.hide { opacity: 0; pointer-events: none; }
-.logo { width: 96px; height: 96px; border-radius: 24px; box-shadow: 0 12px 40px rgba(255,210,63,.25); }
-.splash h1 { font-size: 46px; font-weight: 900; margin: 18px 0 4px; letter-spacing: -.02em; }
-.splash p { color: var(--muted); margin: 0 0 30px; font-size: 16px; max-width: 320px; }
-.go { height: 58px; padding: 0 34px; border-radius: 999px; background: var(--sun); color: #1a1400; font-weight: 900; font-size: 18px; box-shadow: 0 10px 30px rgba(255,210,63,.35); animation: breathe 2.2s ease-in-out infinite; }
-.go[disabled] { opacity: .5; animation: none; }
-.splash .fine { max-width: 340px; }
+/* ---------- lataus- ja infokortit ---------- */
+.card.info h2 { font-size: 24px; margin: 10px 0 6px; }
+.card.info p { color: var(--muted); margin: 0 auto; max-width: 320px; }
+.card.info .big { font-size: 56px; }
+.card.info .spin { width: 42px; height: 42px; border-radius: 50%; border: 3px solid rgba(255,255,255,.2); border-top-color: var(--sun); animation: spin .8s linear infinite; margin: 0 auto; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pop { 40% { transform: scale(1.3); } }
@@ -182,18 +193,12 @@ h2.sh { font-size: 22px; margin: 4px 0 12px; }
 </div>
 
 <div class="flash" id="flash"></div>
+<div class="bubble" id="bubble"></div>
+<div class="slowtag" id="slowtag">🐢 0,5× · päästä irti</div>
 <div class="toast" id="toast"></div>
 <button class="sound" id="sound" hidden>🔇 Tryck för ljud</button>
 <div class="back" id="back"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
-
-<div class="splash" id="splash">
-  <img class="logo" src="icons/icon-192.png" alt="">
-  <h1>Flöde</h1>
-  <p id="splashTxt">Svenska, ett svep i taget. Tryck på ett ord så översätts det.</p>
-  <button class="go" id="go" disabled>Laddar…</button>
-  <div class="fine" id="splashFine"></div>
-</div>
 
 <script>
 "use strict";
@@ -212,6 +217,7 @@ const ICON = {
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M6 3h11a1 1 0 0 1 1 1v17l-6.5-4L5 21V4a1 1 0 0 1 1-1z"/></svg>',
   out: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
   play: '<svg viewBox="0 0 24 24"><path d="M8 5.6v12.8a1 1 0 0 0 1.53.85l10.1-6.4a1 1 0 0 0 0-1.7L9.53 4.75A1 1 0 0 0 8 5.6z"/></svg>',
+  sound: '<svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>',
   pause: '<svg viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="1.2"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2"/></svg>'
 };
 
@@ -224,7 +230,7 @@ try { const saved = JSON.parse(localStorage.getItem(KEY)); if (saved) S = { ...B
 let saveT = null;
 function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} }, 300); }
 // karsi vanhat katselut
-(() => { const lim = Date.now() - 14 * 864e5; for (const k in S.seen) if (S.seen[k] < lim) delete S.seen[k]; })();
+(() => { const lim = Date.now() - 180 * 864e5; for (const k in S.seen) if (S.seen[k] < lim) delete S.seen[k]; })();
 
 // ================================================================ pisteet, putki, palkinnot
 function xpToday() { return S.xp.date === today() ? S.xp.today : 0; }
@@ -307,29 +313,52 @@ function buildPool() {
 }
 function score(it) {
   let s = (S.w.ch[it.channel] || 0) + 0.6 * (S.w.cat[it.cat] || 0);
-  const age = (Date.now() - Date.parse(it.published)) / 864e5;
-  s += Math.max(0, 1 - age / 21) * 0.8;                       // tuoreus
-  s += it.level ? -Math.abs(it.level - S.level) * 0.35 : -0.2; // sopiva vaikeus
+  const age = (Date.now() - Date.parse(it.found || it.published)) / 864e5;
+  s += Math.max(0, 1 - age / 30) * 0.6;                       // tuoreus
+  s += it.level ? -Math.abs(it.level - S.level) * 0.35 : -0.15; // sopiva vaikeus
   if (it.subs) s += 0.35;                                       // napautettava tekstitys = oppimista
-  s += Math.log10(1 + (it.views || 0)) * 0.05;                  // suosio
-  const seen = S.seen[it.id];
-  if (seen) s -= 3 + Math.max(0, 3 - (Date.now() - seen) / 864e5);
+  s += Math.log10(1 + (it.views || 0)) * 0.04;                  // suosio
   return s;
 }
+let recycleNoticeShown = false;
 function nextItems(n) {
-  const recent = new Set(cards.slice(-40).filter(c => c.item).map(c => c.item.id));
-  let cand = pool.filter(it => !recent.has(it.id));
-  if (!cand.length) cand = pool.slice();
-  const scored = cand.map(it => ({ it, s: score(it) + Math.random() * 0.9 })).sort((a, b) => b.s - a.s);
-  const out = [];
-  let last = cards.length && cards[cards.length - 1].item ? cards[cards.length - 1].item.channel : null;
-  while (out.length < n && scored.length) {
-    let i;
-    if (Math.random() < 0.2) i = Math.random() * Math.min(scored.length, 40) | 0;  // tutkiminen: vaihtelevat palkinnot
-    else { i = scored.findIndex(x => x.it.channel !== last); if (i < 0) i = 0; }
-    const [x] = scored.splice(i, 1);
-    out.push(x.it); last = x.it.channel;
+  // estetään vain viimeisimmät kortit, jotta kierrätys toimii, kun kaikki on katsottu
+  const windowN = Math.max(3, Math.min(60, Math.floor(pool.length / 2)));
+  const inFeed = new Set(cards.filter(c => c.item).slice(-windowN).map(c => c.item.id));
+  let cand = pool.filter(it => !inFeed.has(it.id) && !S.seen[it.id]);
+  let recycled = false;
+  if (cand.length < n) {
+    // kaikki katsottu: kierrätetään vanhimmat katsotut, harvoin nähty ensin
+    const old = pool.filter(it => !inFeed.has(it.id) && S.seen[it.id]).sort((a, b) => S.seen[a.id] - S.seen[b.id]).slice(0, 300);
+    if (old.length) recycled = true;
+    cand = cand.concat(old);
   }
+  // esivalinta: parhaat + satunnainen otos, jotta feed ei jämähdä
+  const scored = cand.map(it => ({ it, seen: !!S.seen[it.id], s: score(it) + Math.random() * 1.2 })).sort((a, b) => (a.seen - b.seen) || (b.s - a.s));
+  const short = scored.slice(0, 300).concat(shuffle(scored.slice(300)).slice(0, 100));
+  const hist = cards.filter(c => c.item).map(c => c.item);
+  const out = [], used = new Set();
+  while (out.length < n) {
+    const recent = hist.concat(out).slice(-30);
+    const chCount = {}; recent.forEach(x => chCount[x.channel] = (chCount[x.channel] || 0) + 1);
+    const last5 = new Set(recent.slice(-5).map(x => x.channel));
+    const lastCats = recent.slice(-2).map(x => x.cat);
+    const explore = Math.random() < 0.2;                       // vaihtelevat palkinnot
+    let best = null, bestS = -1e9;
+    for (const x of short) {
+      if (used.has(x.it.id)) continue;
+      let sc = (explore ? Math.random() * 3 : x.s)
+             - (x.seen ? 100 : 0)                      // katsomattomat aina ensin
+             - (last5.has(x.it.channel) ? 50 : 0);     // sama kanava vasta viiden kortin päästä
+      sc -= 0.45 * (chCount[x.it.channel] || 0);
+      if (lastCats.length === 2 && lastCats[0] === x.it.cat && lastCats[1] === x.it.cat) sc -= 0.9;
+      if (sc > bestS) { bestS = sc; best = x; }
+    }
+    if (!best) best = short.find(x => !used.has(x.it.id));     // jos kanavia on liian vähän
+    if (!best) break;
+    used.add(best.it.id); out.push(best.it);
+  }
+  out.recycled = recycled;
   return out;
 }
 
@@ -354,9 +383,9 @@ function videoCardHTML(it, i) {
       <div class="ch">@${esc(it.channel)}</div>
       <div class="ti" data-act="title">${esc(it.title)}</div>
       <div class="tifi"></div>
-      <div class="chips"><span class="chip">${esc(it.cat)}</span>${it.level ? `<span class="chip">Nivå ${it.level}</span>` : ""}${it.subs ? `<span class="chip cc">Tryck på ord</span>` : ""}${it.views ? `<span class="chip">👁 ${fmtViews(it.views)}</span>` : ""}</div>
+      <div class="chips"><span class="chip">${esc(it.cat)}</span>${it.level ? `<span class="chip">Nivå ${it.level}</span>` : ""}${it.subs ? `<span class="chip cc">Tryck på ord</span>` : `<span class="chip yt">YouTube-text</span>`}${it.views ? `<span class="chip">👁 ${fmtViews(it.views)}</span>` : ""}</div>
     </div>
-    <div class="prog"><i></i></div>
+    <div class="scrub"><div class="prog"><i></i><b></b></div></div>
   </section>`;
 }
 function subsLabel() { return { sv: "Sv", svfi: "Sv+Fi", off: "Av" }[S.settings.subs]; }
@@ -382,6 +411,12 @@ function quizCardHTML(q, i) {
 function appendCards(n) {
   let html = "";
   for (const it of nextItems(n)) {
+    if (!recycleNoticeShown && S.seen[it.id] && cards.length) {
+      // ensimmäinen jo nähty video: kerrotaan, että uudet loppuivat
+      recycleNoticeShown = true;
+      cards.push({ type: "info" });
+      html += `<section class="card info" data-i="${cards.length - 1}"><div><div class="big em">🎉</div><h2>Du har sett allt nytt!</h2><p>Katsoit kaikki uudet videot. Uusia tulee muutaman tunnin välein, ja sillä välin näet vanhoja suosikkeja.</p></div></section>`;
+    }
     if (cards.length > 4 && cards.length % 7 === 0) {
       const q = makeQuiz();
       if (q) { cards.push(q); html += quizCardHTML(q, cards.length - 1); }
@@ -390,7 +425,7 @@ function appendCards(n) {
   }
   if (!html && !cards.length) {
     cards.push({ type: "info" });
-    html = `<section class="card info" data-i="0"><div><div class="em" style="font-size:54px">🫙</div><h2>Inga videor här än</h2><p style="color:var(--muted)">Valitse toinen aihe yläpalkista tai lisää kanavia tiedostoon channels.json.</p></div></section>`;
+    html = `<section class="card info" data-i="0"><div><div class="big em">🫙</div><h2>Inga videor här än</h2><p>${FEED && FEED.items && FEED.items.length ? "Valitse toinen aihe yläpalkista." : "Feedi on vielä tyhjä. Aja GitHubissa Actions › Päivitä feed ja julkaise › Run workflow ja avaa äppi uudelleen muutaman minuutin päästä."}</p></div></section>`;
   }
   const start = feedEl.children.length;
   feedEl.insertAdjacentHTML("beforeend", html);
@@ -436,13 +471,14 @@ function setActive(i) {
   leaveCard(active);
   active = i;
   const c = cards[i];
+  if (c.item) { S.seen[c.item.id] = Date.now(); save(); }
   if (i >= cards.length - 4) appendCards(6);
   if (c.type !== "video") { if (playerReady) player.pauseVideo(); hideSound(); return; }
   playCard(c);
 }
 function playCard(c) {
   const it = c.item;
-  c.watch = 0; c.loops = 0; c.taps = 0; c.t0 = Date.now(); c.done = false;
+  c.watch = 0; c.loops = 0; c.taps = 0; c.t0 = Date.now(); c.done = false; c.capsOk = false;
   cues = it.subs ? cuesFor(it) : null; cueIdx = -1;
   c.el.classList.remove("live"); c.el.classList.add("loading");
   c.el.querySelector(".subs").innerHTML = "";
@@ -463,7 +499,11 @@ function applyCaptions(it) {
 }
 function onState(e) {
   const c = cards[active]; if (!c || c.type !== "video") return;
-  if (e.data === YT.PlayerState.PLAYING) { c.el.classList.add("live"); c.el.classList.remove("loading"); }
+  if (e.data === YT.PlayerState.PLAYING) {
+    c.el.classList.add("live"); c.el.classList.remove("loading");
+    // YouTube nollaa tekstitysvalinnan jokaisen videon alussa, joten asetetaan se uudelleen kun toisto alkaa
+    if (!c.capsOk) { c.capsOk = true; applyCaptions(c.item); setTimeout(() => applyCaptions(c.item), 800); setTimeout(() => applyCaptions(c.item), 2000); }
+  }
   if (e.data === YT.PlayerState.BUFFERING) c.el.classList.add("loading");
   if (e.data === YT.PlayerState.ENDED) loopCard(c);
 }
@@ -494,7 +534,8 @@ setInterval(() => {
   const start = it.start || 0, dur = it.end ? it.end - start : (player.getDuration() || 0);
   if (it.end && t >= it.end - 0.08 && st === 1) loopCard(c);
   if (st === 1) c.watch += 0.15;
-  if (dur) c.el.querySelector(".prog i").style.width = clamp((t - start) / dur, 0, 1) * 100 + "%";
+  if (dur && !(scrub && scrub.c === c)) c.el.querySelector(".prog").style.setProperty("--p", clamp((t - start) / dur, 0, 1));
+  idleTick(st);
   if (!c.done && dur && c.watch >= dur * 0.85) completeCard(c);
   if (cues) {
     let k = cues.findIndex(q => t >= q[0] && t < q[1]);
@@ -556,6 +597,8 @@ function bump(it, d) {
 // ================================================================ eleet ja napit
 let lastTap = 0, tapT = null;
 feedEl.addEventListener("click", e => {
+  if (suppressTap) { suppressTap = false; return; }
+  if (e.target.closest(".scrub")) return;
   const card = e.target.closest(".card"); if (!card) return;
   const c = cards[+card.dataset.i];
   const w = e.target.closest(".subs .w");
@@ -570,9 +613,98 @@ feedEl.addEventListener("click", e => {
   lastTap = now;
   tapT = setTimeout(() => togglePlay(), 280);
 });
+// ---------------------------------------------------------------- uudet eleet
+let suppressTap = false, scrub = null, hold = null, swipe = null;
+const fmtT = x => { x = Math.max(0, Math.round(x)); return Math.floor(x / 60) + ":" + String(x % 60).padStart(2, "0"); };
+
+// Kelaus: vedä alareunan palkkia
+feedEl.addEventListener("pointerdown", e => {
+  wake();
+  const zone = e.target.closest(".scrub");
+  if (zone) {
+    const card = zone.closest(".card"), i = +card.dataset.i, c = cards[i];
+    if (i !== active || !c || c.type !== "video" || !playerReady) return;
+    e.preventDefault();
+    try { zone.setPointerCapture(e.pointerId); } catch {}
+    scrub = { zone, c, f: 0, wasPlaying: player.getPlayerState() === 1 };
+    zone.classList.add("drag"); player.pauseVideo(); moveScrub(e);
+    return;
+  }
+  // Pitkä painallus: hidastus 0,5× niin kauan kuin sormi on näytöllä
+  if (e.target.closest(".rail, .meta, .subs .w, .qopt, button, .tabs")) return;
+  const card = e.target.closest(".card");
+  if (!card || +card.dataset.i !== active || !cards[active] || cards[active].type !== "video") return;
+  hold = { x: e.clientX, y: e.clientY, fired: false };
+  hold.t = setTimeout(() => {
+    if (!hold || !playerReady) return;
+    hold.fired = true; player.setPlaybackRate(0.5); player.playVideo();
+    $("#slowtag").classList.add("show");
+  }, 380);
+});
+feedEl.addEventListener("pointermove", e => {
+  if (scrub) return moveScrub(e);
+  if (hold && !hold.fired && Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > 10) { clearTimeout(hold.t); hold = null; }
+});
+function endPointer() {
+  if (scrub) {
+    const { c, f, zone, wasPlaying } = scrub, it = c.item, start = it.start || 0;
+    const dur = it.end ? it.end - start : (player.getDuration() || 0);
+    player.seekTo(start + f * dur, true);
+    if (wasPlaying) player.playVideo();
+    zone.classList.remove("drag"); $("#bubble").classList.remove("show");
+    cueIdx = -1; scrub = null; suppressTap = true; setTimeout(() => suppressTap = false, 400);
+  }
+  if (hold) {
+    clearTimeout(hold.t);
+    if (hold.fired) {
+      if (playerReady) player.setPlaybackRate(S.settings.rate);
+      $("#slowtag").classList.remove("show");
+      suppressTap = true; setTimeout(() => suppressTap = false, 400);
+    }
+    hold = null;
+  }
+}
+feedEl.addEventListener("pointerup", endPointer);
+feedEl.addEventListener("pointercancel", endPointer);
+function moveScrub(e) {
+  const r = scrub.zone.getBoundingClientRect(), it = scrub.c.item, start = it.start || 0;
+  const dur = it.end ? it.end - start : (player.getDuration() || 0);
+  scrub.f = clamp((e.clientX - r.left) / r.width, 0, 1);
+  scrub.zone.querySelector(".prog").style.setProperty("--p", scrub.f);
+  const b = $("#bubble"); b.innerHTML = `${fmtT(scrub.f * dur)} <small>/ ${fmtT(dur)}</small>`; b.classList.add("show");
+}
+
+// Välilehden vaihto vaakapyyhkäisyllä
+feedEl.addEventListener("touchstart", e => {
+  swipe = e.touches.length === 1 && !e.target.closest(".scrub") ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() } : null;
+}, { passive: true });
+feedEl.addEventListener("touchend", e => {
+  if (!swipe || scrub) { swipe = null; return; }
+  const t = e.changedTouches[0], dx = t.clientX - swipe.x, dy = t.clientY - swipe.y;
+  if (Math.abs(dx) > 70 && Math.abs(dx) > 2 * Math.abs(dy) && Date.now() - swipe.t < 700) switchTab(dx < 0 ? 1 : -1);
+  swipe = null;
+}, { passive: true });
+function switchTab(dir) {
+  const btns = [...document.querySelectorAll(".tab")];
+  const i = btns.findIndex(b => b.dataset.tab === tab), j = i + dir;
+  if (j < 0 || j >= btns.length) return;
+  btns[j].click();
+  btns[j].scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  toast(btns[j].textContent);
+}
+
+// Yläpalkki häivytetään toiston aikana, jotta video näkyy kokonaan. Kosketus tuo sen takaisin.
+let idleSince = Date.now();
+function wake() { idleSince = Date.now(); $(".top").classList.remove("dim"); }
+function idleTick(st) {
+  if (st !== 1) { wake(); return; }
+  if (Date.now() - idleSince > 3500) $(".top").classList.add("dim");
+}
+feedEl.addEventListener("scroll", wake, { passive: true });
+
 function togglePlay() {
   if (!playerReady) return;
-  if (!wantSound) { wantSound = true; player.unMute(); hideSound(); }
+  if (!wantSound || player.isMuted()) { wantSound = true; player.unMute(); player.playVideo(); hideSound(); flash(ICON.sound); return; }
   if (player.getPlayerState() === 1) { player.pauseVideo(); flash(ICON.pause); } else { player.playVideo(); flash(ICON.play); }
 }
 function like(c, force) {
@@ -591,7 +723,9 @@ function action(act, c, btn) {
   if (act === "subs") {
     S.settings.subs = { sv: "svfi", svfi: "off", off: "sv" }[S.settings.subs]; save();
     document.querySelectorAll('[data-act="subs"] .txt').forEach(t => t.textContent = subsLabel());
-    toast({ sv: "Textning: svenska", svfi: "Textning: svenska + suomi", off: "Textning av – öronträning! 👂" }[S.settings.subs]);
+    const ytOnly = c.type === "video" && !c.item.subs && S.settings.subs !== "off";
+    toast(ytOnly ? (S.settings.subs === "svfi" ? "Tässä videossa vain YouTuben tekstitys, ei suomennosta" : "Textning: svenska (YouTube)")
+                 : { sv: "Textning: svenska", svfi: "Textning: svenska + suomi", off: "Textning av – öronträning! 👂" }[S.settings.subs]);
     if (c.type === "video") { applyCaptions(c.item); cueIdx = -1; }
     return;
   }
@@ -702,9 +836,9 @@ $("#ring").onclick = openBank;
 
 // ================================================================ välilehdet
 function buildTabs() {
-  const order = [];
-  for (const ch of FEED.channels || []) if (ch.category && !order.includes(ch.category)) order.push(ch.category);
-  const present = order.filter(cat => FEED.items.some(i => i.cat === cat));
+  const counts = {};
+  for (const it of FEED.items) counts[it.cat] = (counts[it.cat] || 0) + 1;
+  const present = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
   const tabsEl = $("#tabs");
   tabsEl.innerHTML = [["all", "För dig"], ...present.map(c => [c, c])].map(([k, l]) => `<button class="tab ${k === tab ? "on" : ""}" data-tab="${esc(k)}">${esc(l)}</button>`).join("");
   tabsEl.querySelectorAll(".tab").forEach(b => b.onclick = () => {
@@ -719,28 +853,19 @@ function buildTabs() {
 async function boot() {
   paintTop();
   loadYT();
+  feedEl.innerHTML = `<section class="card info"><div><div class="spin"></div></div></section>`;
   try {
     const r = await fetch("feed.json?t=" + Date.now(), { cache: "no-store" });
     FEED = await r.json();
-  } catch { FEED = null; }
-  const go = $("#go");
-  if (!FEED || !FEED.items || !FEED.items.length) {
-    $("#splashTxt").textContent = "Feedi on vielä tyhjä.";
-    $("#splashFine").innerHTML = "Aja GitHubissa Actions › <b>Päivitä feed ja julkaise</b> › Run workflow ja lataa sivu uudelleen muutaman minuutin päästä.";
-    go.textContent = "Yritä uudelleen"; go.disabled = false; go.onclick = () => location.reload();
-    return;
-  }
+  } catch { FEED = { items: [], channels: [] }; }
+  FEED.items = FEED.items || [];
+  feedEl.innerHTML = "";
   buildTabs();
   buildPool();
   appendCards(8);
-  go.textContent = "Tryck för att börja"; go.disabled = false;
-  go.onclick = () => {
-    wantSound = true;
-    $("#splash").classList.add("hide");
-    setActive(0);
-    if (playerReady) { player.unMute(); player.playVideo(); }
-    setTimeout(checkSound, 1500);
-  };
+  setActive(0);
+  // iOS sallii automaattisen toiston vain äänettömänä: ensimmäinen napautus avaa äänet
+  if (cards[0] && cards[0].type === "video") $("#sound").hidden = false;
 }
 document.addEventListener("visibilitychange", () => { if (document.hidden) pausePlayer(); });
 boot();
