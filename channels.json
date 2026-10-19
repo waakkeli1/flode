@@ -1,0 +1,19 @@
+{
+  "_ohje": "Lisää tai poista kanavia. handle = kanavan osoitteen @-nimi (youtube.com/@nimi). Voit antaa myös channel_id:n (UC...). category = välilehti äpissä.",
+  "language": "sv",
+  "channels": [
+    { "handle": "@JLC",                      "name": "JLC",                    "category": "Humor" },
+    { "handle": "@IJustWantToBeCool",        "name": "IJustWantToBeCool",      "category": "Humor" },
+    { "handle": "@SamTheMan",                "name": "SamTheMan",              "category": "Humor" },
+    { "handle": "@FreudianSlipProductions",  "name": "Freudian Slip",          "category": "Humor" },
+    { "handle": "@IKoketMedJonasFagerstrom", "name": "I köket med Jonas",      "category": "Mat" },
+    { "handle": "@UppdragMat",               "name": "Uppdrag: Mat",           "category": "Mat" },
+    { "handle": "@FamiljenLundell",          "name": "Familjen Lundell",       "category": "Vardag" },
+    { "handle": "@svtnyheter",               "name": "SVT Nyheter",            "category": "Nyheter" },
+    { "handle": "@aftonbladet",              "name": "Aftonbladet",            "category": "Nyheter" },
+    { "handle": "@expressen",                "name": "Expressen",              "category": "Nyheter" },
+    { "handle": "@sverigesradio",            "name": "Sveriges Radio",         "category": "Nyheter" },
+    { "handle": "@urplay",                   "name": "UR",                     "category": "Lär dig" },
+    { "handle": "@SvenskaMedAnna",           "name": "Svenska med Anna",       "category": "Lär dig" }
+  ]
+}

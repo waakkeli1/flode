@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Flöde">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<title>Flöde – svenska, ett svep i taget</title>
+<style>
+:root {
+  --ink: #fff; --muted: rgba(255,255,255,.72); --faint: rgba(255,255,255,.14);
+  --sun: #FFD23F; --heart: #FF3B5C; --ok: #3DDC84; --bad: #FF5A5F; --sheet: #151515; --sheet2: #222;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #000; color: var(--ink); font: 15px/1.4 var(--sans); overflow: hidden;
+             overscroll-behavior: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.em { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+
+/* ---------- soitin feedin alla ---------- */
+#player { position: fixed; inset: 0; z-index: 1; pointer-events: none; background: #000; }
+#player iframe, #yt { width: 100%; height: 100%; border: 0; pointer-events: none; }
+
+/* ---------- feed ---------- */
+.feed { position: fixed; inset: 0; z-index: 2; overflow-y: scroll; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.feed::-webkit-scrollbar { display: none; }
+.card { position: relative; height: 100vh; height: 100dvh; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; }
+.poster-bg, .poster { position: absolute; inset: 0; background-position: center; background-repeat: no-repeat; transition: opacity .35s ease; }
+.poster-bg { background-size: cover; filter: blur(28px) brightness(.55); transform: scale(1.2); }
+.poster { background-size: contain; }
+.poster.short { background-size: cover; }
+.card.live .poster, .card.live .poster-bg { opacity: 0; }
+.feed.scrolling .card .poster, .feed.scrolling .card .poster-bg { opacity: 1; transition: none; }
+.shade { position: absolute; inset: 0; pointer-events: none;
+         background: linear-gradient(to bottom, rgba(0,0,0,.45), transparent 18%, transparent 55%, rgba(0,0,0,.65)); }
+.loader { position: absolute; left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px; border-radius: 50%;
+          border: 3px solid rgba(255,255,255,.25); border-top-color: #fff; animation: spin .8s linear infinite; opacity: 0; transition: opacity .2s; }
+.card.loading .loader { opacity: 1; }
+
+.meta { position: absolute; left: 14px; right: 86px; bottom: calc(22px + var(--sab)); text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+.ch { font-weight: 700; font-size: 16px; }
+.ti { margin-top: 4px; font-size: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tifi { margin-top: 3px; font-size: 14px; color: var(--sun); font-style: italic; }
+.chips { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.chip { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,.18); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.chip.cc { background: rgba(255,210,63,.9); color: #1a1400; text-shadow: none; }
+
+.rail { position: absolute; right: 8px; bottom: calc(96px + var(--sab)); display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.rbtn { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,.6); min-width: 52px; }
+.rbtn .ic { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: rgba(0,0,0,.25); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.rbtn svg { width: 28px; height: 28px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+.rbtn.liked svg { fill: var(--heart); stroke: var(--heart); animation: pop .35s ease; }
+.rbtn .txt { font-size: 13px; font-weight: 800; }
+
+.subs { position: absolute; left: 14px; right: 74px; bottom: calc(150px + var(--sab)); text-align: center; pointer-events: none; }
+.subs .line { display: inline; font-weight: 800; font-size: 22px; line-height: 1.45; padding: .1em .35em; border-radius: 8px;
+              background: rgba(0,0,0,.6); -webkit-box-decoration-break: clone; box-decoration-break: clone; pointer-events: auto; }
+.subs .w { border-radius: 5px; cursor: pointer; }
+.subs .w.tap { background: var(--sun); color: #1a1400; }
+.subs .w.saved { color: var(--sun); }
+.subs .fi { margin-top: 8px; font-size: 16px; font-style: italic; color: var(--muted); text-shadow: 0 1px 3px #000; }
+.prog { position: absolute; left: 0; right: 0; bottom: var(--sab); height: 3px; background: rgba(255,255,255,.15); }
+.prog i { display: block; height: 100%; width: 0; background: #fff; }
+
+/* ---------- yläpalkki ---------- */
+.top { position: fixed; z-index: 3; left: 0; right: 0; top: 0; padding: calc(8px + var(--sat)) 12px 8px; display: flex; align-items: center; gap: 8px; pointer-events: none; }
+.top > * { pointer-events: auto; }
+.streak { font-weight: 800; font-size: 15px; text-shadow: 0 1px 3px rgba(0,0,0,.7); min-width: 44px; }
+.tabs { flex: 1; display: flex; gap: 16px; overflow-x: auto; scrollbar-width: none; justify-content: safe center; -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); padding: 0 14px; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { white-space: nowrap; font-weight: 700; font-size: 16px; color: var(--muted); padding: 6px 0; text-shadow: 0 1px 3px rgba(0,0,0,.7); position: relative; }
+.tab.on { color: #fff; }
+.tab.on::after { content: ""; position: absolute; left: 30%; right: 30%; bottom: 0; height: 3px; border-radius: 2px; background: #fff; }
+.ring { width: 38px; height: 38px; position: relative; flex: none; }
+.ring svg { width: 38px; height: 38px; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 4; }
+.ring .bg { stroke: rgba(255,255,255,.25); }
+.ring .fg { stroke: var(--sun); stroke-linecap: round; transition: stroke-dashoffset .5s; }
+.ring span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; font-weight: 800; text-shadow: 0 1px 2px #000; }
+.ring.full .fg { stroke: var(--ok); }
+
+/* ---------- efektit ---------- */
+.flash { position: fixed; z-index: 4; left: 50%; top: 50%; width: 84px; height: 84px; margin: -42px; border-radius: 50%; background: rgba(0,0,0,.4);
+         display: grid; place-items: center; pointer-events: none; opacity: 0; }
+.flash.show { animation: flash .6s ease; }
+.flash svg { width: 40px; height: 40px; fill: #fff; }
+.burst { position: fixed; z-index: 4; width: 96px; height: 96px; margin: -48px; pointer-events: none; animation: burst .8s ease-out forwards; }
+.burst svg { width: 100%; height: 100%; fill: var(--heart); filter: drop-shadow(0 4px 12px rgba(255,59,92,.6)); }
+.toast { position: fixed; z-index: 7; left: 50%; top: calc(58px + var(--sat)); transform: translate(-50%, -16px); opacity: 0; transition: .25s ease;
+         background: rgba(20,20,20,.88); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); padding: 9px 15px; border-radius: 999px;
+         font-weight: 700; font-size: 14px; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.gold { background: var(--sun); color: #1a1400; }
+.sound { position: fixed; z-index: 5; left: 50%; top: calc(60px + var(--sat)); transform: translateX(-50%); padding: 9px 16px; border-radius: 999px;
+         background: rgba(255,255,255,.95); color: #000; font-weight: 800; font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+.confetti { position: fixed; z-index: 8; width: 9px; height: 14px; border-radius: 2px; pointer-events: none; animation: fall 1.2s ease-in forwards; }
+
+/* ---------- visakortti ---------- */
+.card.quiz { background: radial-gradient(120% 80% at 80% 0%, #3B2F7A 0%, transparent 60%), linear-gradient(170deg, #1B1446, #0A0A16 70%); display: flex; align-items: center; justify-content: center; }
+.qbox { width: min(420px, 88vw); text-align: center; }
+.qk { font-size: 13px; font-weight: 800; letter-spacing: .08em; color: var(--sun); text-transform: uppercase; }
+.qw { font-size: 44px; font-weight: 900; margin: 10px 0 6px; letter-spacing: -.01em; }
+.qs { color: var(--muted); font-size: 15px; margin-bottom: 26px; font-style: italic; }
+.qopts { display: grid; gap: 10px; }
+.qopt { padding: 16px; border-radius: 16px; background: rgba(255,255,255,.09); border: 1.5px solid rgba(255,255,255,.14); font-size: 17px; font-weight: 700; }
+.qopt.ok { background: rgba(61,220,132,.2); border-color: var(--ok); }
+.qopt.bad { background: rgba(255,90,95,.2); border-color: var(--bad); animation: shake .35s; }
+.qhint { margin-top: 26px; color: var(--muted); font-size: 13px; animation: nudge 1.6s ease-in-out infinite; }
+.card.info { display: flex; align-items: center; justify-content: center; text-align: center; padding: 30px; background: #0B0B0B; }
+
+/* ---------- arkit ---------- */
+.back { position: fixed; inset: 0; z-index: 9; background: rgba(0,0,0,.45); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.back.show { opacity: 1; pointer-events: auto; }
+.sheet { position: fixed; z-index: 10; left: 0; right: 0; bottom: 0; max-height: 82vh; overflow-y: auto; background: var(--sheet); border-radius: 22px 22px 0 0;
+         padding: 10px 20px calc(20px + var(--sab)); transform: translateY(105%); transition: transform .26s cubic-bezier(.2,.9,.3,1); -webkit-user-select: text; user-select: text; }
+.sheet.show { transform: none; }
+.grab { width: 40px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.25); margin: 0 auto 14px; }
+.sw { font-size: 32px; font-weight: 900; }
+.sfi { font-size: 21px; color: var(--sun); font-weight: 700; margin-top: 2px; min-height: 28px; }
+.ss { margin-top: 16px; font-size: 16px; font-weight: 600; }
+.ssfi { margin-top: 3px; font-size: 15px; color: var(--muted); font-style: italic; min-height: 20px; }
+.sact { display: flex; gap: 8px; margin-top: 18px; }
+.sact button { flex: 1; height: 48px; border-radius: 14px; background: var(--sheet2); font-weight: 700; font-size: 14px; }
+.sact button.on { background: var(--sun); color: #1a1400; }
+.links { margin-top: 14px; font-size: 13px; color: var(--muted); }
+.links a { color: #9CC8FF; margin-right: 14px; }
+h2.sh { font-size: 22px; margin: 4px 0 12px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--faint); }
+.row small { display: block; color: var(--muted); font-size: 12.5px; }
+.row input[type=range] { width: 46%; accent-color: var(--sun); }
+.row select { background: var(--sheet2); color: #fff; border: 0; border-radius: 10px; padding: 8px 10px; font: 14px var(--sans); }
+.tog { appearance: none; -webkit-appearance: none; width: 50px; height: 30px; border-radius: 15px; background: #3a3a3a; position: relative; flex: none; margin: 0; }
+.tog::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .18s; }
+.tog:checked { background: var(--ok); }
+.tog:checked::after { transform: translateX(20px); }
+.words { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.word { display: inline-flex; align-items: center; gap: 6px; background: var(--sheet2); border-radius: 12px; padding: 8px 6px 8px 11px; font-size: 14px; }
+.word b { font-weight: 800; }
+.word .x { color: var(--muted); padding: 0 6px; font-size: 16px; }
+.fine { color: var(--muted); font-size: 12.5px; margin-top: 14px; line-height: 1.5; }
+
+/* ---------- aloitus ---------- */
+.splash { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px;
+          background: radial-gradient(90% 60% at 50% 30%, #2A2470 0%, transparent 70%), linear-gradient(180deg, #0D0B24, #000); transition: opacity .4s; }
+.splash.hide { opacity: 0; pointer-events: none; }
+.logo { width: 96px; height: 96px; border-radius: 24px; box-shadow: 0 12px 40px rgba(255,210,63,.25); }
+.splash h1 { font-size: 46px; font-weight: 900; margin: 18px 0 4px; letter-spacing: -.02em; }
+.splash p { color: var(--muted); margin: 0 0 30px; font-size: 16px; max-width: 320px; }
+.go { height: 58px; padding: 0 34px; border-radius: 999px; background: var(--sun); color: #1a1400; font-weight: 900; font-size: 18px; box-shadow: 0 10px 30px rgba(255,210,63,.35); animation: breathe 2.2s ease-in-out infinite; }
+.go[disabled] { opacity: .5; animation: none; }
+.splash .fine { max-width: 340px; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pop { 40% { transform: scale(1.3); } }
+@keyframes flash { 0% { opacity: 0; transform: scale(.7); } 25% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.15); } }
+@keyframes burst { 0% { transform: scale(.3) rotate(-15deg); opacity: 0; } 20% { transform: scale(1.15) rotate(5deg); opacity: 1; } 70% { transform: scale(1) translateY(-10px); opacity: 1; } 100% { transform: scale(1.3) translateY(-60px); opacity: 0; } }
+@keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+@keyframes nudge { 50% { transform: translateY(-5px); } }
+@keyframes breathe { 50% { transform: scale(1.04); } }
+@keyframes fall { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(90vh) rotate(540deg); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="player"><div id="yt"></div></div>
+<main class="feed" id="feed" aria-label="Videofeed"></main>
+
+<div class="top">
+  <div class="streak" id="streak" title="Putki"></div>
+  <nav class="tabs" id="tabs" aria-label="Aiheet"></nav>
+  <button class="ring" id="ring" aria-label="Päivän tavoite ja sanapankki">
+    <svg viewBox="0 0 38 38"><circle class="bg" cx="19" cy="19" r="16"/><circle class="fg" id="ringFg" cx="19" cy="19" r="16"/></svg><span id="ringTxt">0</span>
+  </button>
+</div>
+
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+<button class="sound" id="sound" hidden>🔇 Tryck för ljud</button>
+<div class="back" id="back"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+
+<div class="splash" id="splash">
+  <img class="logo" src="icons/icon-192.png" alt="">
+  <h1>Flöde</h1>
+  <p id="splashTxt">Svenska, ett svep i taget. Tryck på ett ord så översätts det.</p>
+  <button class="go" id="go" disabled>Laddar…</button>
+  <div class="fine" id="splashFine"></div>
+</div>
+
+<script>
+"use strict";
+// ================================================================ apurit
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const today = (o = 0) => { const d = new Date(); d.setDate(d.getDate() + o); return d.toLocaleDateString("sv-SE"); };
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const WORDRE = /[\p{L}\p{M}\p{N}]+(?:['’\-][\p{L}\p{M}\p{N}]+)*/gu;
+const fmtViews = n => !n ? "" : n >= 1e6 ? (n / 1e6).toFixed(1).replace(".0", "") + " mn" : n >= 1e3 ? Math.round(n / 1e3) + " t" : String(n);
+const ICON = {
+  heart: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 20.5s-7.5-4.4-9.3-9.2C1.4 7.9 3.5 4.5 7 4.5c2 0 3.6 1.1 5 3 1.4-1.9 3-3 5-3 3.5 0 5.6 3.4 4.3 6.8-1.8 4.8-9.3 9.2-9.3 9.2z"/></svg>',
+  heartFill: '<svg viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.4-9.3-9.2C1.4 7.9 3.5 4.5 7 4.5c2 0 3.6 1.1 5 3 1.4-1.9 3-3 5-3 3.5 0 5.6 3.4 4.3 6.8-1.8 4.8-9.3 9.2-9.3 9.2z"/></svg>',
+  replay: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M6 3h11a1 1 0 0 1 1 1v17l-6.5-4L5 21V4a1 1 0 0 1 1-1z"/></svg>',
+  out: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+  play: '<svg viewBox="0 0 24 24"><path d="M8 5.6v12.8a1 1 0 0 0 1.53.85l10.1-6.4a1 1 0 0 0 0-1.7L9.53 4.75A1 1 0 0 0 8 5.6z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="1.2"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2"/></svg>'
+};
+
+// ================================================================ tila
+const KEY = "flode-v1";
+const BLANK = () => ({ w: { ch: {}, cat: {} }, seen: {}, likes: {}, bad: {}, words: [], xp: { date: "", today: 0 }, streak: { count: 0, last: "" },
+                       level: 2.5, watchedToday: { date: "", n: 0 }, combo: 0, recog: {}, settings: { subs: "sv", rate: 1, goal: 30, onlySubs: false } });
+let S = BLANK();
+try { const saved = JSON.parse(localStorage.getItem(KEY)); if (saved) S = { ...BLANK(), ...saved, w: { ch: {}, cat: {}, ...saved.w }, settings: { ...BLANK().settings, ...saved.settings } }; } catch {}
+let saveT = null;
+function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} }, 300); }
+// karsi vanhat katselut
+(() => { const lim = Date.now() - 14 * 864e5; for (const k in S.seen) if (S.seen[k] < lim) delete S.seen[k]; })();
+
+// ================================================================ pisteet, putki, palkinnot
+function xpToday() { return S.xp.date === today() ? S.xp.today : 0; }
+function streakNow() { return (S.streak.last === today() || S.streak.last === today(-1)) ? S.streak.count : 0; }
+function addXp(n, why) {
+  const d = today(), before = xpToday();
+  if (S.xp.date !== d) S.xp = { date: d, today: 0 };
+  S.xp.today += n;
+  if (S.streak.last !== d) { S.streak.count = S.streak.last === today(-1) ? S.streak.count + 1 : 1; S.streak.last = d; if (S.streak.count > 1) toast(`🔥 ${S.streak.count} dagar i rad!`, true); }
+  if (before < S.settings.goal && S.xp.today >= S.settings.goal) { toast("🎯 Dagens mål klart!", true); confetti(); }
+  else if (why) toast(why);
+  save(); paintTop();
+}
+function paintTop() {
+  const C = 2 * Math.PI * 16, f = clamp(xpToday() / S.settings.goal, 0, 1);
+  const fg = $("#ringFg"); fg.setAttribute("stroke-dasharray", C); fg.setAttribute("stroke-dashoffset", C * (1 - f));
+  $("#ring").classList.toggle("full", f >= 1);
+  $("#ringTxt").textContent = xpToday();
+  $("#streak").innerHTML = `<span class="em">🔥</span> ${streakNow()}`;
+}
+let toastT = null;
+function toast(msg, gold = false) {
+  const t = $("#toast"); t.textContent = msg; t.className = "toast show" + (gold ? " gold" : "");
+  clearTimeout(toastT); toastT = setTimeout(() => t.className = "toast", 2200);
+}
+function confetti() {
+  const cols = ["#FFD23F", "#FF3B5C", "#3DDC84", "#5AB4FF", "#fff"];
+  for (let i = 0; i < 28; i++) {
+    const c = document.createElement("i"); c.className = "confetti";
+    c.style.left = (Math.random() * 100) + "vw"; c.style.top = (-5 - Math.random() * 10) + "vh";
+    c.style.background = cols[i % cols.length]; c.style.animationDelay = (Math.random() * .35) + "s";
+    document.body.append(c); setTimeout(() => c.remove(), 1800);
+  }
+}
+function flash(icon) { const f = $("#flash"); f.innerHTML = icon; f.classList.remove("show"); void f.offsetWidth; f.classList.add("show"); }
+function burst(x, y) {
+  const b = document.createElement("div"); b.className = "burst"; b.innerHTML = ICON.heartFill;
+  b.style.left = x + "px"; b.style.top = y + "px"; b.style.rotate = (Math.random() * 30 - 15) + "deg";
+  document.body.append(b); setTimeout(() => b.remove(), 900);
+}
+
+// ================================================================ käännös (vain napautuksesta)
+const MT_KEY = "flode-mt";
+let mtCache = {};
+try { mtCache = JSON.parse(localStorage.getItem(MT_KEY)) || {}; } catch {}
+async function mt(text) {
+  const k = text.trim().toLowerCase();
+  if (mtCache[k]) return mtCache[k];
+  const r = await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=sv&tl=fi&dt=t&q=" + encodeURIComponent(text));
+  if (!r.ok) throw new Error("mt");
+  const d = await r.json();
+  const out = d[0].map(x => x[0]).join("").trim();
+  mtCache[k] = out;
+  const keys = Object.keys(mtCache); if (keys.length > 2000) delete mtCache[keys[0]];
+  try { localStorage.setItem(MT_KEY, JSON.stringify(mtCache)); } catch {}
+  return out;
+}
+function say(text) {
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.lang = "sv-SE"; u.rate = .9;
+  const v = speechSynthesis.getVoices().find(v => (v.lang || "").toLowerCase().startsWith("sv")); if (v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+
+// ================================================================ feed ja järjestys
+let FEED = null, pool = [], tab = "all";
+const cards = [];
+let active = -1;
+const feedEl = $("#feed");
+
+function cuesFor(it) {
+  const v = FEED.videos && FEED.videos[it.vid];
+  if (!v || !v.cues) return null;
+  const a = it.start || 0, b = it.end || 1e9;
+  return v.cues.filter(c => c[1] > a && c[0] < b);
+}
+function buildPool() {
+  pool = FEED.items.filter(it => (tab === "all" || it.cat === tab) && !S.bad[it.vid] && (!S.settings.onlySubs || it.subs));
+}
+function score(it) {
+  let s = (S.w.ch[it.channel] || 0) + 0.6 * (S.w.cat[it.cat] || 0);
+  const age = (Date.now() - Date.parse(it.published)) / 864e5;
+  s += Math.max(0, 1 - age / 21) * 0.8;                       // tuoreus
+  s += it.level ? -Math.abs(it.level - S.level) * 0.35 : -0.2; // sopiva vaikeus
+  if (it.subs) s += 0.35;                                       // napautettava tekstitys = oppimista
+  s += Math.log10(1 + (it.views || 0)) * 0.05;                  // suosio
+  const seen = S.seen[it.id];
+  if (seen) s -= 3 + Math.max(0, 3 - (Date.now() - seen) / 864e5);
+  return s;
+}
+function nextItems(n) {
+  const recent = new Set(cards.slice(-40).filter(c => c.item).map(c => c.item.id));
+  let cand = pool.filter(it => !recent.has(it.id));
+  if (!cand.length) cand = pool.slice();
+  const scored = cand.map(it => ({ it, s: score(it) + Math.random() * 0.9 })).sort((a, b) => b.s - a.s);
+  const out = [];
+  let last = cards.length && cards[cards.length - 1].item ? cards[cards.length - 1].item.channel : null;
+  while (out.length < n && scored.length) {
+    let i;
+    if (Math.random() < 0.2) i = Math.random() * Math.min(scored.length, 40) | 0;  // tutkiminen: vaihtelevat palkinnot
+    else { i = scored.findIndex(x => x.it.channel !== last); if (i < 0) i = 0; }
+    const [x] = scored.splice(i, 1);
+    out.push(x.it); last = x.it.channel;
+  }
+  return out;
+}
+
+// ================================================================ kortit
+function thumbOf(it) { return `https://i.ytimg.com/vi/${it.vid}/hqdefault.jpg`; }
+function videoCardHTML(it, i) {
+  const liked = !!S.likes[it.id];
+  return `<section class="card loading" data-i="${i}">
+    <div class="poster-bg" style="background-image:url('${thumbOf(it)}')"></div>
+    <div class="poster ${it.kind === "short" ? "short" : ""}" style="background-image:url('${thumbOf(it)}')"></div>
+    <div class="shade"></div><div class="loader"></div>
+    <div class="subs"></div>
+    <div class="rail">
+      <button class="rbtn ${liked ? "liked" : ""}" data-act="like" aria-label="Gilla"><span class="ic">${liked ? ICON.heartFill : ICON.heart}</span>${liked ? "Gillad" : "Gilla"}</button>
+      <button class="rbtn" data-act="subs" aria-label="Textning"><span class="ic"><span class="txt">${subsLabel()}</span></span>Text</button>
+      <button class="rbtn" data-act="rate" aria-label="Hastighet"><span class="ic"><span class="txt">${S.settings.rate === 1 ? "1×" : String(S.settings.rate).replace(".", ",") + "×"}</span></span>Tempo</button>
+      <button class="rbtn" data-act="replay" aria-label="Upprepa repliken"><span class="ic">${ICON.replay}</span>Igen</button>
+      <button class="rbtn" data-act="bank" aria-label="Ordbank"><span class="ic">${ICON.book}</span><span data-n>${S.words.length}</span></button>
+      <button class="rbtn" data-act="yt" aria-label="Öppna i YouTube"><span class="ic">${ICON.out}</span>YouTube</button>
+    </div>
+    <div class="meta">
+      <div class="ch">@${esc(it.channel)}</div>
+      <div class="ti" data-act="title">${esc(it.title)}</div>
+      <div class="tifi"></div>
+      <div class="chips"><span class="chip">${esc(it.cat)}</span>${it.level ? `<span class="chip">Nivå ${it.level}</span>` : ""}${it.subs ? `<span class="chip cc">Tryck på ord</span>` : ""}${it.views ? `<span class="chip">👁 ${fmtViews(it.views)}</span>` : ""}</div>
+    </div>
+    <div class="prog"><i></i></div>
+  </section>`;
+}
+function subsLabel() { return { sv: "Sv", svfi: "Sv+Fi", off: "Av" }[S.settings.subs]; }
+
+function makeQuiz() {
+  const words = S.words.filter(w => w.fi);
+  if (words.length < 4) return null;
+  // vanhin kysymätön ensin -> kertaus
+  const target = words.slice().sort((a, b) => (a.q || 0) - (b.q || 0))[Math.random() * Math.min(3, words.length) | 0];
+  const others = shuffle(words.filter(w => w.fi.toLowerCase() !== target.fi.toLowerCase())).slice(0, 3);
+  if (others.length < 3) return null;
+  return { type: "quiz", target, options: shuffle([target, ...others]) };
+}
+function quizCardHTML(q, i) {
+  return `<section class="card quiz" data-i="${i}"><div class="qbox">
+    <div class="qk">Snabbfråga · +5</div>
+    <div class="qw">${esc(q.target.w)}</div>
+    <div class="qs">${q.target.s ? "“" + esc(q.target.s) + "”" : "Mitä tämä tarkoittaa?"}</div>
+    <div class="qopts">${q.options.map((o, k) => `<button class="qopt" data-k="${k}">${esc(o.fi)}</button>`).join("")}</div>
+    <div class="qhint">Svep vidare ↑</div></div></section>`;
+}
+
+function appendCards(n) {
+  let html = "";
+  for (const it of nextItems(n)) {
+    if (cards.length > 4 && cards.length % 7 === 0) {
+      const q = makeQuiz();
+      if (q) { cards.push(q); html += quizCardHTML(q, cards.length - 1); }
+    }
+    cards.push({ type: "video", item: it }); html += videoCardHTML(it, cards.length - 1);
+  }
+  if (!html && !cards.length) {
+    cards.push({ type: "info" });
+    html = `<section class="card info" data-i="0"><div><div class="em" style="font-size:54px">🫙</div><h2>Inga videor här än</h2><p style="color:var(--muted)">Valitse toinen aihe yläpalkista tai lisää kanavia tiedostoon channels.json.</p></div></section>`;
+  }
+  const start = feedEl.children.length;
+  feedEl.insertAdjacentHTML("beforeend", html);
+  for (let k = start; k < feedEl.children.length; k++) {
+    const el = feedEl.children[k]; cards[+el.dataset.i].el = el; io.observe(el);
+  }
+  // esilataa seuraavat kansikuvat
+  cards.slice(active + 1, active + 5).forEach(c => { if (c.item) new Image().src = thumbOf(c.item); });
+}
+function resetFeed() {
+  leaveCard(active);
+  io.disconnect(); cards.length = 0; feedEl.innerHTML = ""; active = -1;
+  buildPool(); appendCards(8);
+  feedEl.scrollTop = 0;
+  requestAnimationFrame(() => setActive(0));
+}
+
+const io = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) setActive(+e.target.dataset.i); }, { root: feedEl, threshold: 0.66 });
+let scrollT = null;
+feedEl.addEventListener("scroll", () => {
+  feedEl.classList.add("scrolling");
+  clearTimeout(scrollT); scrollT = setTimeout(() => feedEl.classList.remove("scrolling"), 160);
+}, { passive: true });
+
+// ================================================================ soitin
+let player = null, playerReady = false, wantSound = false, pending = null;
+let cues = null, cueIdx = -1;
+window.onYouTubeIframeAPIReady = () => {
+  player = new YT.Player("yt", {
+    width: "100%", height: "100%",
+    playerVars: { playsinline: 1, controls: 0, disablekb: 1, fs: 0, rel: 0, iv_load_policy: 3, modestbranding: 1, cc_load_policy: 0, hl: "sv", cc_lang_pref: "sv", mute: 1, origin: location.origin },
+    events: {
+      onReady: () => { playerReady = true; if (pending) { const c = pending; pending = null; playCard(c); } },
+      onStateChange: onState,
+      onError: onPlayerError
+    }
+  });
+};
+function loadYT() { const s = document.createElement("script"); s.src = "https://www.youtube.com/iframe_api"; document.head.append(s); }
+
+function setActive(i) {
+  if (i === active || !cards[i]) return;
+  leaveCard(active);
+  active = i;
+  const c = cards[i];
+  if (i >= cards.length - 4) appendCards(6);
+  if (c.type !== "video") { if (playerReady) player.pauseVideo(); hideSound(); return; }
+  playCard(c);
+}
+function playCard(c) {
+  const it = c.item;
+  c.watch = 0; c.loops = 0; c.taps = 0; c.t0 = Date.now(); c.done = false;
+  cues = it.subs ? cuesFor(it) : null; cueIdx = -1;
+  c.el.classList.remove("live"); c.el.classList.add("loading");
+  c.el.querySelector(".subs").innerHTML = "";
+  if (!playerReady) { pending = c; return; }
+  const opts = { videoId: it.vid, startSeconds: it.start || 0 };
+  if (it.end) opts.endSeconds = it.end;
+  player.loadVideoById(opts);
+  player.setPlaybackRate(S.settings.rate);
+  if (wantSound) player.unMute(); else player.mute();
+  applyCaptions(it);
+  setTimeout(checkSound, 1200);
+}
+function applyCaptions(it) {
+  try {
+    if (S.settings.subs !== "off" && !cues) { player.loadModule("captions"); player.setOption("captions", "track", { languageCode: "sv" }); }
+    else player.unloadModule("captions");
+  } catch {}
+}
+function onState(e) {
+  const c = cards[active]; if (!c || c.type !== "video") return;
+  if (e.data === YT.PlayerState.PLAYING) { c.el.classList.add("live"); c.el.classList.remove("loading"); }
+  if (e.data === YT.PlayerState.BUFFERING) c.el.classList.add("loading");
+  if (e.data === YT.PlayerState.ENDED) loopCard(c);
+}
+function loopCard(c) {
+  c.loops++;
+  if (!c.done) completeCard(c);
+  player.seekTo(c.item.start || 0, true); player.playVideo();
+}
+function onPlayerError() {
+  const c = cards[active]; if (!c || !c.item) return;
+  S.bad[c.item.vid] = 1; save();
+  toast("Videota ei voi toistaa, hypätään seuraavaan");
+  setTimeout(() => { const nx = cards[active + 1]; if (nx && nx.el) nx.el.scrollIntoView({ behavior: "smooth" }); }, 700);
+}
+function checkSound() {
+  if (!playerReady || active < 0 || cards[active].type !== "video") return;
+  const muted = player.isMuted && player.isMuted();
+  $("#sound").hidden = !muted;
+}
+function hideSound() { $("#sound").hidden = true; }
+$("#sound").onclick = () => { wantSound = true; player.unMute(); player.playVideo(); hideSound(); setTimeout(checkSound, 900); };
+
+// ---------------------------------------------------------------- ajastin: edistyminen + tekstitys
+setInterval(() => {
+  if (!playerReady || active < 0) return;
+  const c = cards[active]; if (!c || c.type !== "video" || !player.getCurrentTime) return;
+  const it = c.item, t = player.getCurrentTime() || 0, st = player.getPlayerState();
+  const start = it.start || 0, dur = it.end ? it.end - start : (player.getDuration() || 0);
+  if (it.end && t >= it.end - 0.08 && st === 1) loopCard(c);
+  if (st === 1) c.watch += 0.15;
+  if (dur) c.el.querySelector(".prog i").style.width = clamp((t - start) / dur, 0, 1) * 100 + "%";
+  if (!c.done && dur && c.watch >= dur * 0.85) completeCard(c);
+  if (cues) {
+    let k = cues.findIndex(q => t >= q[0] && t < q[1]);
+    if (k !== cueIdx) { cueIdx = k; renderCue(c, k >= 0 ? cues[k] : null); }
+  }
+}, 150);
+
+function wordsHTML(s) {
+  let out = "", i = 0;
+  for (const m of s.matchAll(WORDRE)) { out += esc(s.slice(i, m.index)) + `<span class="w">${esc(m[0])}</span>`; i = m.index + m[0].length; }
+  return out + esc(s.slice(i));
+}
+function renderCue(c, cue) {
+  const box = c.el.querySelector(".subs");
+  if (!cue || S.settings.subs === "off") { box.innerHTML = ""; return; }
+  box.innerHTML = `<div class="line">${wordsHTML(cue[2])}</div>${S.settings.subs === "svfi" ? `<div class="fi">…</div>` : ""}`;
+  const saved = new Set(S.words.map(w => w.w.toLowerCase()));
+  box.querySelectorAll(".w").forEach(w => {
+    const k = w.textContent.toLowerCase();
+    if (!saved.has(k)) return;
+    w.classList.add("saved");
+    const entry = S.words.find(x => x.w.toLowerCase() === k);
+    const rk = k + "|" + c.item.vid;
+    if (entry && entry.vid !== c.item.vid && !S.recog[rk]) { S.recog[rk] = 1; addXp(2, `⭐ Du kände igen "${w.textContent}"! +2`); }
+  });
+  if (S.settings.subs === "svfi") mt(cue[2]).then(t => { const fi = box.querySelector(".fi"); if (fi && cues && cues[cueIdx] === cue) fi.textContent = t; }).catch(() => {});
+}
+
+// ---------------------------------------------------------------- signaalit: mitä katsot, sitä saat
+function completeCard(c) {
+  c.done = true;
+  const d = today();
+  if (S.watchedToday.date !== d) S.watchedToday = { date: d, n: 0 };
+  S.watchedToday.n++;
+  S.combo++;
+  bump(c.item, 0.3);
+  const n = S.watchedToday.n;
+  if ([10, 25, 50, 100].includes(n)) addXp(5, `🎬 ${n} videor idag! +5`);
+  else if (S.combo % 5 === 0) addXp(3, `⚡ Combo ×${S.combo}! +3`);
+  else addXp(1);
+}
+function leaveCard(i) {
+  const c = cards[i]; if (!c || c.type !== "video" || !c.t0) return;
+  const dwell = (Date.now() - c.t0) / 1000;
+  if (dwell >= 1) S.seen[c.item.id] = Date.now();
+  if (dwell < 2 && !c.done) { bump(c.item, -0.25); S.combo = 0; }
+  // vaikeuden mukautus: paljon napautuksia -> helpompaa, ei yhtään -> vähän haastavampaa
+  if (c.item.subs) {
+    if (c.taps >= 4) S.level = clamp(S.level - 0.15, 1, 5);
+    else if (c.taps === 0 && c.done) S.level = clamp(S.level + 0.05, 1, 5);
+  }
+  c.t0 = 0; save();
+}
+function bump(it, d) {
+  S.w.ch[it.channel] = clamp((S.w.ch[it.channel] || 0) + d, -2, 3);
+  S.w.cat[it.cat] = clamp((S.w.cat[it.cat] || 0) + d / 2, -2, 3);
+}
+
+// ================================================================ eleet ja napit
+let lastTap = 0, tapT = null;
+feedEl.addEventListener("click", e => {
+  const card = e.target.closest(".card"); if (!card) return;
+  const c = cards[+card.dataset.i];
+  const w = e.target.closest(".subs .w");
+  if (w) return openWord(w, c);
+  const btn = e.target.closest("[data-act]");
+  if (btn) return action(btn.dataset.act, c, btn);
+  const q = e.target.closest(".qopt");
+  if (q) return answerQuiz(c, +q.dataset.k, q);
+  if (c.type !== "video") return;
+  const now = Date.now();
+  if (now - lastTap < 280) { clearTimeout(tapT); lastTap = 0; like(c, true); burst(e.clientX, e.clientY); return; }
+  lastTap = now;
+  tapT = setTimeout(() => togglePlay(), 280);
+});
+function togglePlay() {
+  if (!playerReady) return;
+  if (!wantSound) { wantSound = true; player.unMute(); hideSound(); }
+  if (player.getPlayerState() === 1) { player.pauseVideo(); flash(ICON.pause); } else { player.playVideo(); flash(ICON.play); }
+}
+function like(c, force) {
+  const id = c.item.id, on = force ? true : !S.likes[id];
+  if (on === !!S.likes[id]) return;
+  if (on) { S.likes[id] = 1; bump(c.item, 0.6); } else { delete S.likes[id]; bump(c.item, -0.6); }
+  const b = c.el.querySelector('[data-act="like"]');
+  b.classList.toggle("liked", on);
+  b.innerHTML = `<span class="ic">${on ? ICON.heartFill : ICON.heart}</span>${on ? "Gillad" : "Gilla"}`;
+  save();
+}
+function action(act, c, btn) {
+  if (act === "like") return like(c);
+  if (act === "bank") return openBank();
+  if (act === "yt") { pausePlayer(); return window.open(`https://www.youtube.com/watch?v=${c.item.vid}&t=${Math.floor(c.item.start || 0)}s`, "_blank"); }
+  if (act === "subs") {
+    S.settings.subs = { sv: "svfi", svfi: "off", off: "sv" }[S.settings.subs]; save();
+    document.querySelectorAll('[data-act="subs"] .txt').forEach(t => t.textContent = subsLabel());
+    toast({ sv: "Textning: svenska", svfi: "Textning: svenska + suomi", off: "Textning av – öronträning! 👂" }[S.settings.subs]);
+    if (c.type === "video") { applyCaptions(c.item); cueIdx = -1; }
+    return;
+  }
+  if (act === "rate") {
+    S.settings.rate = { 1: 0.75, 0.75: 0.5, 0.5: 1 }[S.settings.rate] || 1; save();
+    if (playerReady) player.setPlaybackRate(S.settings.rate);
+    document.querySelectorAll('[data-act="rate"] .txt').forEach(t => t.textContent = S.settings.rate === 1 ? "1×" : String(S.settings.rate).replace(".", ",") + "×");
+    return toast(S.settings.rate === 1 ? "Normal hastighet" : "Långsammare: " + String(S.settings.rate).replace(".", ",") + "×");
+  }
+  if (act === "replay") {
+    if (!playerReady) return;
+    const t = cues && cueIdx >= 0 ? cues[cueIdx][0] : Math.max(c.item.start || 0, player.getCurrentTime() - 4);
+    player.seekTo(t, true); player.playVideo(); flash(ICON.replay);
+    return;
+  }
+  if (act === "title") {
+    const box = c.el.querySelector(".tifi");
+    if (box.textContent) { box.textContent = ""; return; }
+    box.textContent = "…";
+    mt(c.item.title).then(t => box.textContent = t).catch(() => box.textContent = "Käännös ei onnistunut");
+  }
+}
+function pausePlayer() { if (playerReady) player.pauseVideo(); }
+
+// ================================================================ sana-arkki
+const sheet = $("#sheet"), back = $("#back");
+let sheetResume = false;
+function openSheet(html, resumeAfter) {
+  sheetResume = resumeAfter;
+  sheet.innerHTML = `<div class="grab"></div>` + html;
+  back.classList.add("show"); sheet.classList.add("show");
+}
+function closeSheet() {
+  sheet.classList.remove("show"); back.classList.remove("show");
+  document.querySelectorAll(".subs .w.tap").forEach(w => w.classList.remove("tap"));
+  if (sheetResume && playerReady) player.playVideo();
+  sheetResume = false;
+}
+back.onclick = closeSheet;
+
+function openWord(wEl, c) {
+  const playing = playerReady && player.getPlayerState() === 1;
+  pausePlayer();
+  c.taps = (c.taps || 0) + 1;
+  wEl.classList.add("tap");
+  const word = wEl.textContent, key = word.toLowerCase();
+  const cue = cues && cueIdx >= 0 ? cues[cueIdx] : null;
+  const sentence = cue ? cue[2] : "";
+  const isSaved = () => S.words.some(x => x.w.toLowerCase() === key);
+  openSheet(`
+    <div class="sw">${esc(word)}</div><div class="sfi" id="wFi">…</div>
+    ${sentence ? `<div class="ss">${esc(sentence)}</div><div class="ssfi" id="sFi">…</div>` : ""}
+    <div class="sact"><button id="wSay">🔊 Lyssna</button><button id="wSave"></button><button id="wRep">↺ Igen</button></div>
+    <div class="links"><a href="https://glosbe.com/sv/fi/${encodeURIComponent(key)}" target="_blank" rel="noopener">Glosbe</a><a href="https://fi.wiktionary.org/wiki/${encodeURIComponent(key)}" target="_blank" rel="noopener">Wikisanakirja</a><a href="https://svenska.se/tre/?sok=${encodeURIComponent(key)}" target="_blank" rel="noopener">svenska.se</a></div>`, playing);
+  const paint = () => { const b = $("#wSave"); b.classList.toggle("on", isSaved()); b.textContent = isSaved() ? "★ Sparad" : "☆ Spara"; };
+  paint();
+  let wordFi = "";
+  mt(word).then(t => { wordFi = t; const el = $("#wFi"); if (el) el.textContent = t; }).catch(() => { const el = $("#wFi"); if (el) el.textContent = "Käännös ei onnistunut"; });
+  if (sentence) mt(sentence).then(t => { const el = $("#sFi"); if (el) el.textContent = t; }).catch(() => {});
+  $("#wSay").onclick = () => say(word);
+  $("#wRep").onclick = () => { closeSheet(); if (cue && playerReady) { player.seekTo(cue[0], true); player.playVideo(); } };
+  $("#wSave").onclick = () => {
+    const k = S.words.findIndex(x => x.w.toLowerCase() === key);
+    if (k >= 0) S.words.splice(k, 1);
+    else {
+      S.words.unshift({ w: word, fi: wordFi, s: sentence, vid: c.item.vid, at: Date.now() });
+      if (S.words.length === 1) toast("⭐ Ensimmäinen sana tallessa!", true);
+    }
+    save(); paint();
+    document.querySelectorAll('[data-n]').forEach(n => n.textContent = S.words.length);
+  };
+}
+
+// ================================================================ visa
+function answerQuiz(c, k, btn) {
+  if (c.answered) return;
+  c.answered = true;
+  const ok = c.options[k] === c.target;
+  c.target.q = Date.now();
+  c.el.querySelectorAll(".qopt").forEach((b, i) => { if (c.options[i] === c.target) b.classList.add("ok"); });
+  if (ok) { addXp(5, "✅ Rätt! +5"); confetti(); say(c.target.w); }
+  else { btn.classList.add("bad"); toast("Nästan! Oikea vastaus on korostettu."); }
+  save();
+}
+
+// ================================================================ sanapankki ja asetukset
+function openBank() {
+  const playing = playerReady && player.getPlayerState() === 1;
+  pausePlayer();
+  const f = FEED || { items: [] };
+  const withSubs = f.items.filter(i => i.subs).length;
+  openSheet(`
+    <h2 class="sh">Ordbank <span style="color:var(--muted);font-weight:600">${S.words.length}</span></h2>
+    ${S.words.length ? `<div class="words">${S.words.map((w, i) => `<span class="word"><button data-say="${i}"><b>${esc(w.w)}</b> ${esc(w.fi || "")}</button><button class="x" data-del="${i}" aria-label="Poista">×</button></span>`).join("")}</div>`
+                     : `<p class="fine">Napauta tekstityksen sanaa ja valitse Spara. Tallennetut sanat tulevat vastaan visoissa ja korostuvat videoissa.</p>`}
+    <div class="row" style="margin-top:12px"><div>Taso <small>Mukautuu napautustesi mukaan</small></div><input type="range" id="sLevel" min="1" max="5" step="0.1" value="${S.level}"></div>
+    <div class="row"><div>Vain videot, joissa napautettava tekstitys</div><input type="checkbox" class="tog" id="sOnly" ${S.settings.onlySubs ? "checked" : ""}></div>
+    <div class="row"><div>Päivän tavoite</div><select id="sGoal">${[15, 30, 60, 100].map(g => `<option value="${g}" ${g === S.settings.goal ? "selected" : ""}>${g} pistettä</option>`).join("")}</select></div>
+    <p class="fine">Tänään: ${xpToday()} pistettä · ${S.watchedToday.date === today() ? S.watchedToday.n : 0} videota · putki ${streakNow()} pv<br>
+    Feed päivitetty ${f.generated ? new Date(f.generated).toLocaleString("fi-FI") : "–"} · ${f.items.length} korttia, ${withSubs} napautettavalla tekstityksellä${f.transcripts_blocked ? "<br>YouTube esti osan tekstityksistä viimeisimmällä hakukerralla, joten niissä näkyy YouTuben oma tekstitys." : ""}</p>`, playing);
+  sheet.querySelectorAll("[data-say]").forEach(b => b.onclick = () => say(S.words[+b.dataset.say].w));
+  sheet.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { S.words.splice(+b.dataset.del, 1); save(); openBank(); document.querySelectorAll('[data-n]').forEach(n => n.textContent = S.words.length); });
+  $("#sLevel").oninput = e => { S.level = +e.target.value; save(); };
+  $("#sOnly").onchange = e => { S.settings.onlySubs = e.target.checked; save(); closeSheet(); resetFeed(); };
+  $("#sGoal").onchange = e => { S.settings.goal = +e.target.value; save(); paintTop(); };
+}
+$("#ring").onclick = openBank;
+
+// ================================================================ välilehdet
+function buildTabs() {
+  const order = [];
+  for (const ch of FEED.channels || []) if (ch.category && !order.includes(ch.category)) order.push(ch.category);
+  const present = order.filter(cat => FEED.items.some(i => i.cat === cat));
+  const tabsEl = $("#tabs");
+  tabsEl.innerHTML = [["all", "För dig"], ...present.map(c => [c, c])].map(([k, l]) => `<button class="tab ${k === tab ? "on" : ""}" data-tab="${esc(k)}">${esc(l)}</button>`).join("");
+  tabsEl.querySelectorAll(".tab").forEach(b => b.onclick = () => {
+    if (b.dataset.tab === tab) return;
+    tab = b.dataset.tab;
+    tabsEl.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === b));
+    resetFeed();
+  });
+}
+
+// ================================================================ käynnistys
+async function boot() {
+  paintTop();
+  loadYT();
+  try {
+    const r = await fetch("feed.json?t=" + Date.now(), { cache: "no-store" });
+    FEED = await r.json();
+  } catch { FEED = null; }
+  const go = $("#go");
+  if (!FEED || !FEED.items || !FEED.items.length) {
+    $("#splashTxt").textContent = "Feedi on vielä tyhjä.";
+    $("#splashFine").innerHTML = "Aja GitHubissa Actions › <b>Päivitä feed ja julkaise</b> › Run workflow ja lataa sivu uudelleen muutaman minuutin päästä.";
+    go.textContent = "Yritä uudelleen"; go.disabled = false; go.onclick = () => location.reload();
+    return;
+  }
+  buildTabs();
+  buildPool();
+  appendCards(8);
+  go.textContent = "Tryck för att börja"; go.disabled = false;
+  go.onclick = () => {
+    wantSound = true;
+    $("#splash").classList.add("hide");
+    setActive(0);
+    if (playerReady) { player.unMute(); player.playVideo(); }
+    setTimeout(checkSound, 1500);
+  };
+}
+document.addEventListener("visibilitychange", () => { if (document.hidden) pausePlayer(); });
+boot();
+</script>
+</body>
+</html>
